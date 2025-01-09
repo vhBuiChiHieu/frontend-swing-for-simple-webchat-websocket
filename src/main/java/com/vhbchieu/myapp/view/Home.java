@@ -3,18 +3,19 @@ package com.vhbchieu.myapp.view;
 
 import com.vhbchieu.myapp.ChatMessage;
 import com.vhbchieu.myapp.MessageType;
-import static com.vhbchieu.myapp.MessageType.CHAT;
-import static com.vhbchieu.myapp.MessageType.JOIN;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
+
+import org.springframework.lang.NonNull;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandler;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 import org.springframework.web.socket.sockjs.client.SockJsClient;
@@ -37,27 +38,29 @@ public class Home extends javax.swing.JFrame {
         
         //
         sessionHandler = new StompSessionHandlerAdapter() {
-            
+           
             @Override
-            public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
+            public void afterConnected(@NonNull StompSession session, @NonNull StompHeaders connectedHeaders) {
                 int result = JOptionPane.showConfirmDialog(Home.this, "Kết nối thành công.", "Thông báo", JOptionPane.OK_CANCEL_OPTION);
                 if (result == JOptionPane.OK_OPTION){
-                    stompSession = session;
                     listMessage.setVisible(true);
                     btSend.setEnabled(true);
                     txtChat.setEnabled(true);
+                    stompSession = session;
+                    txtName.setEnabled(false);
+                    btStart.setText("Disconnect");
                     
                     //đăng kí để nhận message từ topic
                     session.subscribe("/topic/public", new StompFrameHandler(){
                         
                         @Override
-                        public java.lang.reflect.Type getPayloadType(StompHeaders headers) {
+                        public java.lang.reflect.Type getPayloadType(@NonNull StompHeaders headers) {
                             return ChatMessage.class;
                         }
 
                         //
                         @Override
-                        public void handleFrame(StompHeaders headers, Object payload) {
+                        public void handleFrame(@NonNull StompHeaders headers, Object payload) {
                             if (listModel.getSize() >= MAX_MESSAGE){
                                 listModel.remove(0);
                             }
@@ -94,21 +97,26 @@ public class Home extends javax.swing.JFrame {
     }
     
     private void connectWebSocket(){
-        //Khoi tao transport
-        List<Transport> transports = new ArrayList<>();
-        transports.add(new WebSocketTransport(new StandardWebSocketClient()));
-        
-        //tao SockJS
-        SockJsClient sockJsClient = new SockJsClient(transports);
-        
-        //tao stomp tu sockJS
-        WebSocketStompClient stompClient = new WebSocketStompClient(sockJsClient);
-        
-        //thiet lap convert chuyen java <-> json
-        stompClient.setMessageConverter(new MappingJackson2MessageConverter());
-        
-        stompClient.connect("ws://localhost:8080/ws", sessionHandler);
-        
+            //Khoi tao transport
+            List<Transport> transports = new ArrayList<>();
+            transports.add(new WebSocketTransport(new StandardWebSocketClient()));
+
+            //tao SockJS
+            SockJsClient sockJsClient = new SockJsClient(transports);
+
+            //tao stomp tu sockJS
+            WebSocketStompClient stompClient = new WebSocketStompClient(sockJsClient);
+
+            //thiet lap convert chuyen java <-> json
+            stompClient.setMessageConverter(new MappingJackson2MessageConverter());
+
+            stompClient
+                    .connect("ws://localhost:8080/ws", sessionHandler)
+                    .addCallback(
+                            ss -> {
+                                //do something
+                    },
+                            thr -> JOptionPane.showMessageDialog(this, "Kết Nối Thất Bại!"));
     }
     
     private void disconnectWebSocket(){
@@ -202,8 +210,6 @@ public class Home extends javax.swing.JFrame {
             } else {
                 this.username = txtName.getText();
                 connectWebSocket();
-                txtName.setEnabled(false);
-                btStart.setText("Disconnect");
             }
         } else {
             disconnectWebSocket();
