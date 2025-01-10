@@ -1,12 +1,18 @@
 
 package com.vhbchieu.myapp.view;
 
-import com.vhbchieu.myapp.ChatMessage;
-import com.vhbchieu.myapp.MessageType;
+import com.vhbchieu.myapp.model.ChatMessage;
+import com.vhbchieu.myapp.model.MessageType;
+import java.awt.Component;
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
+import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
+import javax.swing.SwingConstants;
 
 import org.springframework.lang.NonNull;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
@@ -15,7 +21,7 @@ import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandler;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
-import org.springframework.web.client.ResourceAccessException;
+import org.springframework.util.StringUtils;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 import org.springframework.web.socket.sockjs.client.SockJsClient;
@@ -32,6 +38,7 @@ public class Home extends javax.swing.JFrame {
 
     public Home() {
         initComponents();
+        myInit();
         listMessage.setVisible(false);
         listModel = new DefaultListModel<>();
         listMessage.setModel(listModel);
@@ -96,6 +103,29 @@ public class Home extends javax.swing.JFrame {
         };
     }
     
+    private void myInit(){
+        setLocationRelativeTo(null);
+        listMessage.setCellRenderer(new DefaultListCellRenderer(){
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                JLabel itemLabel = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                String itemString = value.toString();
+                if (itemString.contains(":")){
+                   String[] itemSplited = StringUtils.split(itemString, ":");
+                   if (itemSplited[0].equals(username)){
+                       itemLabel.setText(itemSplited[1]);
+                       itemLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+                   }
+                   else
+                       itemLabel.setHorizontalAlignment(SwingConstants.LEFT);
+                } else {
+                    itemLabel.setHorizontalAlignment(SwingConstants.CENTER);
+                }
+                return itemLabel;
+            }
+        });
+    }
+    
     private void connectWebSocket(){
             //Khoi tao transport
             List<Transport> transports = new ArrayList<>();
@@ -132,6 +162,13 @@ public class Home extends javax.swing.JFrame {
         //
         stompSession.send("/app/chat.sendMessage", chatMessage);
     }
+    
+    private void btSendMessageEvent(){
+        if (!txtChat.getText().isBlank()){
+            sendMessage(txtChat.getText());
+            txtChat.setText("");
+        }
+    }
 
 
     @SuppressWarnings("unchecked")
@@ -149,36 +186,37 @@ public class Home extends javax.swing.JFrame {
         btSend = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("Global chat app");
+        setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
         setResizable(false);
 
-        panelHome.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-
         btStart.setText("Start");
+        btStart.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btStart.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btStartActionPerformed(evt);
             }
         });
-        panelHome.add(btStart, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 120, 120, 30));
-        panelHome.add(txtName, new org.netbeans.lib.awtextra.AbsoluteConstraints(80, 70, 247, 30));
+
+        txtName.setCursor(new java.awt.Cursor(java.awt.Cursor.TEXT_CURSOR));
 
         jLabel1.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        jLabel1.setText("Name");
-        panelHome.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 80, 60, -1));
+        jLabel1.setText("Username");
 
         jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
         jLabel2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel2.setText("Chat Application");
-        panelHome.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 10, 260, 40));
 
         listMessage.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "message", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 0, 12), new java.awt.Color(51, 204, 255))); // NOI18N
         listMessage.setEnabled(false);
         jScrollPane1.setViewportView(listMessage);
 
-        panelHome.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 170, 350, 240));
-
         txtChat.setEnabled(false);
-        panelHome.add(txtChat, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 440, 260, 30));
+        txtChat.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                txtChatKeyReleased(evt);
+            }
+        });
 
         btSend.setText("Send");
         btSend.setEnabled(false);
@@ -187,17 +225,63 @@ public class Home extends javax.swing.JFrame {
                 btSendActionPerformed(evt);
             }
         });
-        panelHome.add(btSend, new org.netbeans.lib.awtextra.AbsoluteConstraints(290, 440, 80, 30));
+
+        javax.swing.GroupLayout panelHomeLayout = new javax.swing.GroupLayout(panelHome);
+        panelHome.setLayout(panelHomeLayout);
+        panelHomeLayout.setHorizontalGroup(
+            panelHomeLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelHomeLayout.createSequentialGroup()
+                .addGroup(panelHomeLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(panelHomeLayout.createSequentialGroup()
+                        .addGap(70, 70, 70)
+                        .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 260, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(panelHomeLayout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(4, 4, 4)
+                        .addComponent(txtName, javax.swing.GroupLayout.PREFERRED_SIZE, 270, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(panelHomeLayout.createSequentialGroup()
+                        .addGap(140, 140, 140)
+                        .addComponent(btStart, javax.swing.GroupLayout.PREFERRED_SIZE, 130, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(panelHomeLayout.createSequentialGroup()
+                        .addGap(20, 20, 20)
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 350, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(panelHomeLayout.createSequentialGroup()
+                        .addGap(20, 20, 20)
+                        .addComponent(txtChat, javax.swing.GroupLayout.PREFERRED_SIZE, 260, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(10, 10, 10)
+                        .addComponent(btSend, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(22, Short.MAX_VALUE))
+        );
+        panelHomeLayout.setVerticalGroup(
+            panelHomeLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelHomeLayout.createSequentialGroup()
+                .addGap(10, 10, 10)
+                .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(20, 20, 20)
+                .addGroup(panelHomeLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(txtName, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel1))
+                .addGap(20, 20, 20)
+                .addComponent(btStart, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(20, 20, 20)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 240, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(30, 30, 30)
+                .addGroup(panelHomeLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(txtChat, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btSend, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(31, Short.MAX_VALUE))
+        );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(panelHome, javax.swing.GroupLayout.PREFERRED_SIZE, 392, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(panelHome, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(panelHome, javax.swing.GroupLayout.DEFAULT_SIZE, 501, Short.MAX_VALUE)
+            .addComponent(panelHome, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
 
         pack();
@@ -213,46 +297,27 @@ public class Home extends javax.swing.JFrame {
             }
         } else {
             disconnectWebSocket();
+            JOptionPane.showMessageDialog(this, "Đã ngắt kết nối");
+            txtName.setEnabled(true);
             btStart.setText("Start");
+            txtChat.setText("");
+            txtChat.setEnabled(false);
+            btSend.setEnabled(false);
+            listModel.clear();
+            listMessage.setVisible(false);
         }
     }//GEN-LAST:event_btStartActionPerformed
 
     private void btSendActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btSendActionPerformed
-        if (!txtChat.getText().isBlank()){
-            sendMessage(txtChat.getText());
-        }
+        btSendMessageEvent();
     }//GEN-LAST:event_btSendActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(Home.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(Home.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(Home.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(Home.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+    private void txtChatKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtChatKeyReleased
+        if (evt.getKeyCode() == KeyEvent.VK_ENTER){
+            btSendMessageEvent();
         }
-        //</editor-fold>
+    }//GEN-LAST:event_txtChatKeyReleased
 
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new Home().setVisible(true);
-            }
-        });
-    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btSend;
