@@ -35,10 +35,12 @@ public class Home extends javax.swing.JFrame {
     private StompSessionHandler sessionHandler;
     private StompSession stompSession;  //phiên
     private final int MAX_MESSAGE = 20;
+    private long lastMessageTime;
 
     public Home() {
         initComponents();
         myInit();
+        lastMessageTime = System.currentTimeMillis();
         listMessage.setVisible(false);
         listModel = new DefaultListModel<>();
         listMessage.setModel(listModel);
@@ -141,7 +143,7 @@ public class Home extends javax.swing.JFrame {
             stompClient.setMessageConverter(new MappingJackson2MessageConverter());
 
             stompClient
-                    .connect("ws://localhost:8080/ws", sessionHandler)
+                    .connect("ws://localhost:5000/ws", sessionHandler)
                     .addCallback(
                             ss -> {
                                 //do something
@@ -164,9 +166,14 @@ public class Home extends javax.swing.JFrame {
     }
     
     private void btSendMessageEvent(){
-        if (!txtChat.getText().isBlank()){
-            sendMessage(txtChat.getText());
-            txtChat.setText("");
+        if (System.currentTimeMillis() - lastMessageTime >= 2000) {
+            if (!txtChat.getText().isBlank()){
+                sendMessage(txtChat.getText());
+                lastMessageTime = System.currentTimeMillis();
+                txtChat.setText("");
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Bạn đang chat quá nhanh");
         }
     }
 
@@ -233,14 +240,6 @@ public class Home extends javax.swing.JFrame {
             .addGroup(panelHomeLayout.createSequentialGroup()
                 .addGroup(panelHomeLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(panelHomeLayout.createSequentialGroup()
-                        .addGap(70, 70, 70)
-                        .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 260, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(panelHomeLayout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(4, 4, 4)
-                        .addComponent(txtName, javax.swing.GroupLayout.PREFERRED_SIZE, 270, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(panelHomeLayout.createSequentialGroup()
                         .addGap(140, 140, 140)
                         .addComponent(btStart, javax.swing.GroupLayout.PREFERRED_SIZE, 130, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(panelHomeLayout.createSequentialGroup()
@@ -250,15 +249,22 @@ public class Home extends javax.swing.JFrame {
                         .addGap(20, 20, 20)
                         .addComponent(txtChat, javax.swing.GroupLayout.PREFERRED_SIZE, 260, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(10, 10, 10)
-                        .addComponent(btSend, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(btSend, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(panelHomeLayout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(4, 4, 4)
+                        .addGroup(panelHomeLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 260, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(txtName, javax.swing.GroupLayout.PREFERRED_SIZE, 270, javax.swing.GroupLayout.PREFERRED_SIZE))))
                 .addContainerGap(22, Short.MAX_VALUE))
         );
         panelHomeLayout.setVerticalGroup(
             panelHomeLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(panelHomeLayout.createSequentialGroup()
-                .addGap(10, 10, 10)
+                .addGap(12, 12, 12)
                 .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(20, 20, 20)
+                .addGap(18, 18, 18)
                 .addGroup(panelHomeLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(txtName, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel1))
