@@ -1,5 +1,5 @@
 
-package com.vhbchieu.myapp;
+package com.vhbchieu.myapp.model;
 
 public enum MessageType {
     CHAT,

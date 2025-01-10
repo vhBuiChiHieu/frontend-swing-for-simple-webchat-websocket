@@ -1,5 +1,7 @@
 
-package com.vhbchieu.myapp;
+package com.vhbchieu.myapp.model;
+
+import com.vhbchieu.myapp.model.MessageType;
 
 
 public class ChatMessage {
